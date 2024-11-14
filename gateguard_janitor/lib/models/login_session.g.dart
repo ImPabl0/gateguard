@@ -6,24 +6,24 @@ part of 'login_session.dart';
 // TypeAdapterGenerator
 // **************************************************************************
 
-class LoginSessionAdapter extends TypeAdapter<LoginSession> {
+class LoginSessionAdapter extends TypeAdapter<AuthSession> {
   @override
   final int typeId = 0;
 
   @override
-  LoginSession read(BinaryReader reader) {
+  AuthSession read(BinaryReader reader) {
     final numOfFields = reader.readByte();
     final fields = <int, dynamic>{
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
-    return LoginSession(
+    return AuthSession(
       userCPF: fields[0] as String,
       validUntil: fields[1] as DateTime,
     );
   }
 
   @override
-  void write(BinaryWriter writer, LoginSession obj) {
+  void write(BinaryWriter writer, AuthSession obj) {
     writer
       ..writeByte(2)
       ..writeByte(0)

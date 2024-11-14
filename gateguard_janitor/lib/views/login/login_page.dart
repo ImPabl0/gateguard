@@ -2,12 +2,13 @@ import 'package:brasil_fields/brasil_fields.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:get_it/get_it.dart';
+
 import 'package:gateguard/common/default_input_decoration.dart';
 import 'package:gateguard/common/label_wrapper.dart';
-import 'package:gateguard/models/user.dart';
-import 'package:gateguard/repositories/auth_repository.dart';
+import 'package:gateguard/models/login_session.dart';
+import 'package:gateguard/services/auth_service.dart';
 import 'package:gateguard/views/index.dart';
-import 'package:get_it/get_it.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -17,18 +18,28 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final AuthRepository authRepository = GetIt.I.get();
+  final AuthService authService = GetIt.I.get<AuthService>();
 
   Future<void> login() async {
     String cpf = UtilBrasilFields.removeCaracteres(cpfController.text);
     String senha = senhaController.text;
-    User? foundUser = await authRepository.findUserByCpfAndSenha(cpf, senha);
-    if (foundUser == null) {
-      return;
+    try {
+      AuthSession? currSession =
+          await authService.login(cpf: cpf, password: senha);
+      if (currSession == null) {
+        return;
+      }
+      if (!mounted) return;
+      Navigator.push(
+          context, MaterialPageRoute(builder: (context) => const IndexPage()));
+    } catch (e, stack) {
+      debugPrint(e.toString());
+      debugPrintStack(stackTrace: stack);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        backgroundColor: Colors.red,
+        content: Text("Erro ao fazer login"),
+      ));
     }
-    if (!mounted) return;
-    Navigator.push(
-        context, MaterialPageRoute(builder: (context) => const IndexPage()));
   }
 
   void forgotPassword() {}
@@ -40,7 +51,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> checkIfLoggedIn() async {
-    if (await authRepository.checkLoginSession()) {
+    if (await authService.checkLoginSession()) {
       if (!mounted) return;
       Navigator.push(
           context, MaterialPageRoute(builder: (context) => const IndexPage()));
@@ -102,6 +113,7 @@ class _LoginPageState extends State<LoginPage> {
                           FilteringTextInputFormatter.digitsOnly,
                           CpfInputFormatter(),
                         ],
+                        keyboardType: TextInputType.number,
                         validator: (value) {
                           bool cpfValido = false;
                           try {

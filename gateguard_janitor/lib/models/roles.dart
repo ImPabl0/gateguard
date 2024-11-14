@@ -3,7 +3,7 @@ enum Role {
   sindico,
   porteiro;
 
-  factory Role.fromName(String name) {
+  factory Role.fromName(String? name) {
     switch (name) {
       case 'morador':
         return Role.morador;

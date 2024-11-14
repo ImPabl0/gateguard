@@ -5,6 +5,7 @@ import {
   doc,
   getDocs,
   onSnapshot,
+  orderBy,
   query,
   setDoc,
   where,
@@ -18,6 +19,7 @@ async function getNotificationsFromUser(
   const user = doc(db, 'users', cpf)
   const currQuery = query(
     collection(db, 'notifications'),
+    orderBy('created_at', 'desc'),
     where('user', '==', user),
   )
 
@@ -48,6 +50,7 @@ function listenToUserNotifications(
   const user = doc(db, 'users', cpf)
   const currQuery = query(
     collection(db, 'notifications'),
+    orderBy('created_at', 'desc'),
     where('user', '==', user),
   )
 

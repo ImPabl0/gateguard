@@ -43,6 +43,7 @@ async function saveRequest(request: RequestModel): Promise<void> {
     description: request.description,
     status: request.status,
     type: request.type,
+    guest_name: request.guestName,
     created_at: Timestamp.now(),
   })
 }

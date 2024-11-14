@@ -9,6 +9,7 @@ import { ref } from 'vue';
 const request = ref<RequestModel>({
   id: undefined,
   title: '',
+  guestName: '',
   description: '',
   type: 'person',
   status: 'PENDENT',
@@ -19,12 +20,14 @@ const request = ref<RequestModel>({
 
 const formValidation = ref({
   title: true,
+  guestName: true,
   description: true,
 })
 
 function validateForm() {
   formValidation.value.title = !!request.value.title
   formValidation.value.description = !!request.value.description
+  formValidation.value.guestName = !!request.value.guestName
   return formValidation.value.title && formValidation.value.description
 }
 
@@ -53,6 +56,11 @@ const isLoading = ref(false)
       <label for="title">Título</label>
       <input v-model="request.title" id="title" type="text" class="p-2 border border-gray-300 rounded-md">
       <h6 v-if="!formValidation.title" class="text-red-600 text-xs">Título é obrigatório</h6>
+    </div>
+    <div class="flex flex-col gap-1 mt-2">
+      <label for="guest_name">Nome do visitante</label>
+      <input v-model="request.guestName" id="guest_name" type="text" class="p-2 border border-gray-300 rounded-md">
+      <h6 v-if="!formValidation.guestName" class="text-red-600 text-xs">Nome do visitante é obrigatório</h6>
     </div>
     <div class="flex flex-col gap-2 mt-5">
       <label for="description">Descrição</label>

@@ -1,26 +1,30 @@
-import 'dart:collection';
-
-import 'package:firebase_database/firebase_database.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:gateguard/models/login_session.dart';
 import 'package:hive/hive.dart';
 
 import '../models/user.dart';
 
 class AuthRepository {
-  final FirebaseDatabase _database = FirebaseDatabase.instance;
-  LoginSession? _loginSession;
-  Box<LoginSession>? loginBox;
+  AuthSession? _loginSession;
+  Box<AuthSession>? loginBox;
 
-  LoginSession? get loginSession => _loginSession?.copyWith();
+  final FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+  AuthSession? get loginSession => _loginSession?.copyWith();
 
   Future<void> _loadLoginSession() async {
-    loginBox ??= await Hive.openBox<LoginSession>("loginSession");
+    loginBox ??= await Hive.openBox<AuthSession>("loginSession");
     _loginSession = loginBox!.get(1);
   }
 
   Future<void> logout() async {
-    loginBox ??= await Hive.openBox<LoginSession>("loginSession");
+    loginBox ??= await Hive.openBox<AuthSession>("loginSession");
     loginBox!.delete(1);
+  }
+
+  Future<void> saveSession(AuthSession session) async {
+    loginBox ??= await Hive.openBox<AuthSession>("loginSession");
+    await loginBox!.put(1, session);
   }
 
   Future<bool> checkLoginSession() async {
@@ -40,44 +44,48 @@ class AuthRepository {
     return true;
   }
 
-  Future<User?> findUserByCpf(String cpf) async {
-    DatabaseReference userRef = _database.ref("users");
-    DatabaseEvent snapshot =
-        await userRef.orderByChild("cpf").equalTo(cpf).once();
-    if (snapshot.snapshot.value == null) {
+  Future<User?> getCurrentUser() async {
+    await _loadLoginSession();
+    if (_loginSession == null) {
       return null;
     }
-    List<Object?> users = snapshot.snapshot.value as List<Object?>;
-    LinkedHashMap map = users[0] as LinkedHashMap;
-    Map convertedMap = map.cast<String, dynamic>();
-    User foundUser = User.fromMap(convertedMap as Map<String, dynamic>);
+    User? foundUser = await findUserByCpf(_loginSession!.userCPF);
+    if (foundUser == null) {
+      return null;
+    }
+    _loginSession!.user = foundUser;
+    return foundUser;
+  }
+
+  Future<User?> findUserByCpf(String cpf) async {
+    QuerySnapshot<Map<String, dynamic>> result = await firestore
+        .collection("users")
+        .where("__name__", isEqualTo: cpf)
+        .get();
+    if (result.docs.isEmpty) {
+      return null;
+    }
+    User foundUser = User.fromMap(result.docs[0].data());
+    foundUser.cpf = result.docs[0].id;
     return foundUser;
   }
 
   Future<User?> findUserByCpfAndSenha(String cpf, String senha) async {
-    DatabaseReference userRef = _database.ref("users");
-    DatabaseEvent snapshot =
-        await userRef.orderByChild("cpf").equalTo(cpf).once();
-    if (snapshot.snapshot.value == null) {
+    QuerySnapshot<Map<String, dynamic>> result = await firestore
+        .collection("users")
+        .where("__name__", isEqualTo: cpf)
+        .where("password", isEqualTo: senha)
+        .get();
+    if (result.docs.isEmpty) {
       return null;
     }
-
-    List<Object?> users = snapshot.snapshot.value as List<Object?>;
-    LinkedHashMap map = users[0] as LinkedHashMap;
-    Map convertedMap = map.cast<String, dynamic>();
-
-    if (convertedMap["password"] != senha) {
-      return null;
-    }
-
-    User foundUser = User.fromMap(convertedMap as Map<String, dynamic>);
-    _loginSession = LoginSession(
+    User foundUser = User.fromMap(result.docs[0].data());
+    foundUser.cpf = result.docs[0].id;
+    _loginSession = AuthSession(
       userCPF: foundUser.cpf,
       user: foundUser,
       validUntil: DateTime.now().add(const Duration(days: 1)),
     );
-    loginBox ??= await Hive.openBox<LoginSession>("loginSession");
-    loginBox!.put(1, _loginSession!);
     return foundUser;
   }
 }

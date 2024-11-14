@@ -5,6 +5,7 @@ export class RequestModel {
   id: string | undefined
   created_at: Date
   description: string
+  guestName: string
   requester: User | undefined | DocumentReference
   status: string
   title: string
@@ -15,6 +16,7 @@ export class RequestModel {
     created_at: Date,
     id: string | undefined,
     description: string,
+    guestName: string,
     requester: User,
     status: string,
     title: string,
@@ -24,6 +26,7 @@ export class RequestModel {
     this.created_at = created_at
     this.description = description
     this.requester = requester
+    this.guestName = guestName
     this.status = status
     this.id = id
     this.type = type
